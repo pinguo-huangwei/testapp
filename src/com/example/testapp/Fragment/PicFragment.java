@@ -2,10 +2,8 @@ package com.example.testapp.Fragment;
 
 import android.app.Activity;
 import android.app.Fragment;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
-import android.graphics.Matrix;
-import android.graphics.RectF;
+import android.app.FragmentManager;
+import android.graphics.*;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -14,15 +12,19 @@ import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
-import com.example.testapp.Util.PicUtil;
+import com.example.testapp.MApplication;
 import com.example.testapp.R;
+import com.example.testapp.Util.PicUtil;
 import com.example.testapp.Widget.CutView;
 import com.example.testapp.Widget.MImageView;
+import com.nostra13.universalimageloader.core.ImageLoader;
+import com.nostra13.universalimageloader.core.assist.FailReason;
+import com.nostra13.universalimageloader.core.listener.ImageLoadingListener;
 
 /**
  * Created by huangwei on 14-9-16.
  */
-public class PicFragment extends Fragment implements View.OnClickListener {
+public class PicFragment extends Fragment implements View.OnClickListener, FragmentManager.OnBackStackChangedListener {
     private Activity activity;
     private MImageView imageView;
     private CutView cutView;
@@ -34,10 +36,17 @@ public class PicFragment extends Fragment implements View.OnClickListener {
     private float sX, sY;
     private Bitmap bitmap;
 
+    private String path;
+
+    private boolean changed = false;
+
+    private ImageLoader imageLoader;
+
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         activity = getActivity();
+        imageLoader = MApplication.imageLoader;
     }
 
     @Override
@@ -61,12 +70,17 @@ public class PicFragment extends Fragment implements View.OnClickListener {
         cutBtn.setOnClickListener(this);
         applyBtn.setOnClickListener(this);
         lighterBtn.setOnClickListener(this);
+        activity.getFragmentManager().addOnBackStackChangedListener(this);
 
-        String path = getArguments().getString("path");
+        path = getArguments().getString("path");
+        if (path != null && path.startsWith("file://"))
+            path = path.substring("file://".length());
         if (path != null) {
-//            Toast.makeText(activity, "存储于:" + path, Toast.LENGTH_LONG).show();
-            bitmap = BitmapFactory.decodeFile(path);
+            Point size = new Point();
+            activity.getWindow().getWindowManager().getDefaultDisplay().getSize(size);
+            bitmap = PicUtil.getThumbnailFormPath(path,size.x,size.y);
             setBitmap(bitmap);
+
         }
 
 
@@ -121,10 +135,12 @@ public class PicFragment extends Fragment implements View.OnClickListener {
                 break;
             case R.id.pic_apply:
                 save();
+                changed = true;
                 break;
             case R.id.pic_redder:
                 bitmap = PicUtil.redder(bitmap);
                 setBitmap(bitmap);
+                changed = true;
                 break;
             default:
                 break;
@@ -182,5 +198,12 @@ public class PicFragment extends Fragment implements View.OnClickListener {
         setBitmap(bitmap);
         cutView.setVisibility(View.GONE);
 
+    }
+
+    @Override
+    public void onBackStackChanged() {
+        //保存
+        if (changed)
+            PicUtil.bitmapToFile(bitmap, path);
     }
 }

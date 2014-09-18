@@ -2,24 +2,26 @@ package com.example.testapp.Fragment;
 
 import android.app.Activity;
 import android.app.Fragment;
+import android.app.FragmentManager;
+import android.app.FragmentTransaction;
 import android.os.Bundle;
 import android.os.Environment;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AdapterView;
 import android.widget.GridView;
 import com.example.testapp.Adapter.AlbumAdapter;
 import com.example.testapp.R;
 
 import java.io.File;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 /**
  * Created by huangwei on 14-9-16.
  */
-public class AlbumFragment extends Fragment {
+public class AlbumFragment extends Fragment implements AdapterView.OnItemClickListener {
     private Activity activity;
     private GridView gridView;
 
@@ -46,13 +48,35 @@ public class AlbumFragment extends Fragment {
         if (dir.exists()) {
             List<String> list = new ArrayList<String>();
             String[] files = dir.list();
-            for(int i=0;i<files.length;i++)
-            {
-                list.add("file://"+dir.getAbsolutePath()+File.separator+files[i]);
+            for (int i = 0; i < files.length; i++) {
+                list.add("file://" + dir.getAbsolutePath() + File.separator + files[i]);
             }
             albumAdapter = new AlbumAdapter(activity, list);
             gridView.setAdapter(albumAdapter);
         }
 
+        gridView.setOnItemClickListener(this);
+
+    }
+
+    @Override
+    public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+
+        String path = (String) albumAdapter.getItem(position);
+        FragmentManager fragmentManager = activity.getFragmentManager();
+        Fragment fragment = fragmentManager.findFragmentByTag("PicFragment");
+        if (!(fragment instanceof  PicFragment)) {
+            PicFragment picFragment = new PicFragment();
+            Bundle bundle = new Bundle();
+            bundle.putString("path", path);
+            picFragment.setArguments(bundle);
+
+
+            FragmentTransaction transaction = fragmentManager.beginTransaction();
+            transaction.setTransition(FragmentTransaction.TRANSIT_FRAGMENT_OPEN);
+            transaction.add(R.id.main_picture_preview_layout, picFragment, "PicFragment");
+            transaction.addToBackStack(null);
+            transaction.commit();
+        }
     }
 }

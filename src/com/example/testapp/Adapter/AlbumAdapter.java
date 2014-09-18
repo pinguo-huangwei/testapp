@@ -12,6 +12,8 @@ import android.view.ViewGroup;
 import android.widget.AbsListView;
 import android.widget.BaseAdapter;
 import android.widget.ImageView;
+import com.example.testapp.MApplication;
+import com.example.testapp.MyActivity;
 import com.example.testapp.R;
 import com.example.testapp.Util.DisplayUtil;
 import com.nostra13.universalimageloader.cache.disc.impl.UnlimitedDiscCache;
@@ -43,22 +45,9 @@ public class AlbumAdapter extends BaseAdapter{
         this.context = context;
         imgList = picList;
         unloadDrawable = new ColorDrawable(Color.BLACK);
-        File cacheDir = context.getExternalCacheDir();
-        int size = DisplayUtil.dip2px(context,80);
-        ImageLoaderConfiguration config = new ImageLoaderConfiguration.Builder(context)
-                .memoryCacheExtraOptions(size, size) // default = device screen dimensions
-                .diskCacheExtraOptions(size, size, null)
-                .threadPoolSize(Runtime.getRuntime().availableProcessors()) // default
-            .threadPriority(Thread.NORM_PRIORITY - 2) // default
-            .tasksProcessingOrder(QueueProcessingType.FIFO) // default
-            .denyCacheImageMultipleSizesInMemory()
-            .memoryCacheSizePercentage(30) // default
-            .imageDecoder(new BaseImageDecoder(false)) // default
-            .defaultDisplayImageOptions(DisplayImageOptions.createSimple()) // default
-            .writeDebugLogs()
-            .build();
-       imageLoader = ImageLoader.getInstance();
-        imageLoader.init(config);
+
+        imageLoader = MApplication.imageLoader;
+
     }
     @Override
     public int getCount() {

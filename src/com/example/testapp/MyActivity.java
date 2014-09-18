@@ -17,8 +17,8 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.ImageView;
 import com.example.testapp.Fragment.AlbumFragment;
-import com.example.testapp.Fragment.PicFragment;
 import com.example.testapp.Util.MediaScanner;
+import com.example.testapp.Util.PicUtil;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -64,6 +64,7 @@ public class MyActivity extends Activity implements SurfaceHolder.Callback, View
             }
         };
 
+        setAlbumThumbnail();
 
 
     }
@@ -129,19 +130,10 @@ public class MyActivity extends Activity implements SurfaceHolder.Callback, View
                 takePhoto();
                 break;
             case R.id.main_album:
-//                PicFragment picFragment = new PicFragment();
-//                Bundle bundle = new Bundle();
-//                bundle.putString("path", pic.getPath());
-//                picFragment.setArguments(bundle);
-//                FragmentManager fragmentManager = MyActivity.this.getFragmentManager();
-//                FragmentTransaction transaction = fragmentManager.beginTransaction();
-//                transaction.add(R.id.main_picture_preview_layout,picFragment);
-//                transaction.addToBackStack(null);
-//                transaction.commit();
                 AlbumFragment albumFragment = new AlbumFragment();
                 FragmentManager fragmentManager = MyActivity.this.getFragmentManager();
                 FragmentTransaction transaction = fragmentManager.beginTransaction();
-                transaction.add(R.id.main_picture_preview_layout,albumFragment);
+                transaction.add(R.id.main_picture_preview_layout, albumFragment);
                 transaction.addToBackStack(null);
                 transaction.commit();
                 break;
@@ -164,116 +156,92 @@ public class MyActivity extends Activity implements SurfaceHolder.Callback, View
 //        } else {  // back-facing camera
 //            rotation = (info.orientation + ori) % 360;
 //        }
-        Log.v("hwLog","ori:"+orientation);
+        Log.v("hwLog", "ori:" + orientation);
         int rotation = 0;
-        if(orientation > 325 || orientation <= 45){
+        if (orientation > 325 || orientation <= 45) {
             rotation = 90;
-        }else if(orientation > 45 && orientation <= 135){
+        } else if (orientation > 45 && orientation <= 135) {
             rotation = 180;
-        }else if(orientation > 135 && orientation < 225){
+        } else if (orientation > 135 && orientation < 225) {
             rotation = 270;
         }
         Camera.Parameters mParameters = camera.getParameters();
         mParameters.setRotation(rotation);
         mParameters.setPictureFormat(ImageFormat.JPEG);
         camera.setParameters(mParameters);
-        camera.takePicture(null,null,this);
+        camera.takePicture(null, null, this);
     }
 
-    private Bitmap getThumbnailFormByteArray(byte[] data)
-    {
-        BitmapFactory.Options options = new BitmapFactory.Options();
-        options.inJustDecodeBounds = true;
-        BitmapFactory.decodeByteArray(data,0,data.length,options);
 
-        int width = albumImg.getMeasuredWidth();
-        int height = albumImg.getMeasuredHeight();
-        int inSampleSize = 1;
-        while(true)
-        {
-            if(width > options.outWidth/inSampleSize && height > options.outHeight/inSampleSize)
-            {
-               break;
-            }
-            else
-                ++inSampleSize;
-        }
-        Log.v("hwLog","inSampleSize:"+inSampleSize);
-        options.inJustDecodeBounds = false;
-        options.inSampleSize = inSampleSize;
 
-        return BitmapFactory.decodeByteArray(data,0,data.length,options);
+    private void setAlbumThumbnail() {
+
+        albumImg.post(new Runnable() {
+              @Override
+              public void run() {
+                  File dir = new File(Environment.getExternalStorageDirectory() + "/testpic");
+                  if (dir.exists()) {
+                      String[] list = dir.list();
+                      if (list == null || list.length == 0)
+                          return;
+                      String path = null;
+                      StringBuilder temp = new StringBuilder(dir.getAbsolutePath()+File.separator);
+                      int start = temp.length();
+                      for (int i = 0; i < list.length; i++) {
+                          temp.append(list[i]);
+                          if (PicUtil.isPic(temp.toString())) {
+                              path = temp.toString();
+                              break;
+                          }
+                          temp.delete(start,temp.length());
+                      }
+                      if (path == null)
+                          return;
+
+                      int width = albumImg.getMeasuredWidth();
+                      int height = albumImg.getMeasuredHeight();
+                      final Bitmap thumbnail = PicUtil.getThumbnailFormPath(path,width,height);
+                      albumImg.setImageBitmap(thumbnail);
+                  }
+              }
+          }
+        );
 
 
     }
-//    private Bitmap getThumbnailFormBytePath(String path)
-//    {
-//        BitmapFactory.Options options = new BitmapFactory.Options();
-//        options.inJustDecodeBounds = true;
-//        BitmapFactory.decodeByteArray(data,0,data.length,options);
-//
-//        int width = albumImg.getMeasuredWidth();
-//        int height = albumImg.getMeasuredHeight();
-//        int inSampleSize = 1;
-//        while(true)
-//        {
-//            if(width > options.outWidth/inSampleSize && height > options.outHeight/inSampleSize)
-//            {
-//                break;
-//            }
-//            else
-//                ++inSampleSize;
-//        }
-//        Log.v("hwLog","inSampleSize:"+inSampleSize);
-//        options.inJustDecodeBounds = false;
-//        options.inSampleSize = inSampleSize;
-//
-//        return BitmapFactory.decodeByteArray(data,0,data.length,options);
-//
-//
-//    }
+
+
     @Override
     public void onPictureTaken(final byte[] data, Camera camera) {
         camera.startPreview();
-         new Thread(new Runnable() {
-             @Override
-             public void run() {
-                 File dir = new File(Environment.getExternalStorageDirectory()+"/testpic");
-                 if(!dir.exists())
-                     dir.mkdir();
-                 String name = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(System.currentTimeMillis())+".jpg";
-                 final File pic = new File(dir,name);
-                 FileOutputStream fileOutputStream = null;
-                 try {
-                     pic.createNewFile();
-                     fileOutputStream = new FileOutputStream(pic);
-                     fileOutputStream.write(data,0,data.length);
-                     fileOutputStream.flush();
+        File dir = new File(Environment.getExternalStorageDirectory() + "/testpic");
+        if (!dir.exists())
+            dir.mkdir();
+        String name = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(System.currentTimeMillis()) + ".jpg";
+        final File pic = new File(dir, name);
+        FileOutputStream fileOutputStream = null;
+        try {
+            pic.createNewFile();
+            fileOutputStream = new FileOutputStream(pic);
+            fileOutputStream.write(data, 0, data.length);
+            fileOutputStream.flush();
 
-                 } catch (Exception e) {
-                     e.printStackTrace();
-                 }finally {
-                     if(fileOutputStream!=null)
-                         try {
-                             fileOutputStream.close();
-                         } catch (IOException e) {
-                             e.printStackTrace();
-                         }
-                 }
-                 MediaScanner scanner = new MediaScanner(MyActivity.this);
-                 scanner.scanFile(pic.getAbsolutePath(),"image/*");
-                 thunbnailBitmap = getThumbnailFormByteArray(data);
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            if (fileOutputStream != null)
+                try {
+                    fileOutputStream.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+        }
+        MediaScanner scanner = new MediaScanner(MyActivity.this);
+        scanner.scanFile(pic.getAbsolutePath(), "image/*");
 
-
-                 MyActivity.this.runOnUiThread(new Runnable() {
-                     @Override
-                     public void run() {
-                         albumImg.setImageBitmap(thunbnailBitmap);
-                         takePhothBtn.setEnabled(true);
-                     }
-                 });
-             }
-         }).start();
+        thunbnailBitmap = PicUtil.getThumbnailFormByteArray(data,albumImg.getMeasuredWidth(),albumImg.getMeasuredHeight());
+        albumImg.setImageBitmap(thunbnailBitmap);
+        takePhothBtn.setEnabled(true);
 
 
     }

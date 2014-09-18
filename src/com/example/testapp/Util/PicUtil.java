@@ -1,9 +1,11 @@
 package com.example.testapp.Util;
 
-import android.graphics.Bitmap;
-import android.graphics.Canvas;
-import android.graphics.Color;
-import android.graphics.Paint;
+import android.graphics.*;
+
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
 
 /**
  * Created by huangwei on 14-9-17.
@@ -34,6 +36,92 @@ public class PicUtil {
         }
         bitmap.setPixels(pixels, 0, width, 0, 0, width, height);
         return bitmap;
+
+    }
+
+    /**
+     * 将bitmap写入文件
+     * @param bitmap
+     * @param path
+     * @return
+     */
+    public static boolean bitmapToFile(Bitmap bitmap,String path)
+    {
+        boolean bool = false;
+        if(path!=null && bitmap != null)
+        {
+            FileOutputStream fileOutputStream = null;
+
+            try {
+                fileOutputStream = new FileOutputStream(new File(path));
+                ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                bitmap.compress(Bitmap.CompressFormat.PNG, 100, baos);
+                fileOutputStream.write(baos.toByteArray());
+                fileOutputStream.flush();
+                bool = true;
+            } catch (Exception e) {
+                e.printStackTrace();
+            }finally {
+                if(fileOutputStream!=null)
+                    try {
+                        fileOutputStream.close();
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+            }
+        }
+        return bool;
+    }
+
+    /**
+     * 判断制定路径的文件是否图片
+     * @param path
+     * @return
+     */
+    public static boolean isPic(String path)
+    {
+        //Todo ...
+        return true;
+    }
+
+    public static Bitmap getThumbnailFormByteArray(byte[] data,int width,int height) {
+        BitmapFactory.Options options = new BitmapFactory.Options();
+        options.inJustDecodeBounds = true;
+        BitmapFactory.decodeByteArray(data, 0, data.length, options);
+
+        int inSampleSize = 1;
+        while (true) {
+            if (width > options.outWidth / inSampleSize && height > options.outHeight / inSampleSize) {
+                break;
+            } else
+                ++inSampleSize;
+        }
+        options.inJustDecodeBounds = false;
+        options.inSampleSize = inSampleSize;
+
+        return BitmapFactory.decodeByteArray(data, 0, data.length, options);
+
+
+    }
+
+
+    public static Bitmap getThumbnailFormPath(String path,int width,int height) {
+        BitmapFactory.Options options = new BitmapFactory.Options();
+        options.inJustDecodeBounds = true;
+        BitmapFactory.decodeFile(path, options);
+
+        int inSampleSize = 1;
+        while (true) {
+            if (width > options.outWidth / inSampleSize && height > options.outHeight / inSampleSize) {
+                break;
+            } else
+                ++inSampleSize;
+        }
+        options.inJustDecodeBounds = false;
+        options.inSampleSize = inSampleSize;
+
+        return BitmapFactory.decodeFile(path, options);
+
 
     }
 }
