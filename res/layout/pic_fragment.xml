@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+              android:background="@android:color/black"
+              android:orientation="vertical"
+              android:layout_width="match_parent"
+              android:layout_height="match_parent">
+    <FrameLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_weight="1">
+        <com.example.testapp.Widget.MImageView
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:padding="10dp"
+                android:id="@+id/pic_imageView"/>
+        <com.example.testapp.Widget.CutView
+                android:id="@+id/pic_cutview"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"/>
+    </FrameLayout>
+
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content">
+        <Button android:id="@+id/pic_cut"
+                android:text="裁剪"
+                android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+        <Button android:id="@+id/pic_redder"
+                android:text="更红"
+                android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+        <Button android:id="@+id/pic_apply"
+                android:text="应用"
+                android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+    </LinearLayout>
+</LinearLayout>

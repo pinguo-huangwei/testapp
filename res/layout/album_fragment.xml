@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+              android:background="@android:color/black"
+              android:orientation="vertical"
+              android:layout_width="match_parent"
+              android:layout_height="match_parent">
+
+    <GridView android:id="@+id/album_grid"
+              android:numColumns="auto_fit"
+              android:columnWidth="80dp"
+              android:horizontalSpacing="10dp"
+              android:verticalSpacing="10dp"
+              android:stretchMode="spacingWidth"
+              android:layout_width="match_parent"
+              android:layout_height="match_parent"/>
+</LinearLayout>
