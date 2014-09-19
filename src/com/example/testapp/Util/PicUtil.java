@@ -1,6 +1,9 @@
 package com.example.testapp.Util;
 
+import android.app.Activity;
 import android.graphics.*;
+import android.os.Environment;
+import com.example.testapp.MApplication;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -106,6 +109,16 @@ public class PicUtil {
 
 
     public static Bitmap getThumbnailFormPath(String path,int width,int height) {
+        StringBuilder key = new StringBuilder(path);
+        key.append('w');
+        key.append(width);
+        key.append('h');
+        key.append(height);
+        key.append('_');
+
+        Bitmap bitmap = MApplication.imageLoader.getMemoryCache().get(key.toString());
+        if(bitmap !=null)
+            return bitmap;
         BitmapFactory.Options options = new BitmapFactory.Options();
         options.inJustDecodeBounds = true;
         BitmapFactory.decodeFile(path, options);
@@ -119,9 +132,33 @@ public class PicUtil {
         }
         options.inJustDecodeBounds = false;
         options.inSampleSize = inSampleSize;
+        bitmap = BitmapFactory.decodeFile(path, options);
+        MApplication.imageLoader.getMemoryCache().put(key.toString(),bitmap);
+        return bitmap;
 
-        return BitmapFactory.decodeFile(path, options);
 
+    }
 
+    public static Bitmap getDefaultBitmapFormPath(String path)
+    {
+         Point point = getScreenSize();
+        return getThumbnailFormPath(path,point.x,point.y);
+    }
+
+    public static File getPicDir()
+    {
+        File dir = new File(Environment.getExternalStorageDirectory(),"/testpic");
+        if(!dir.exists())
+            dir.mkdir();
+        return dir;
+    }
+
+    public static Point getScreenSize()
+    {
+        Point point = new Point();
+        Activity curActivity = MApplication.getCurActivity();
+        if(curActivity!=null)
+            curActivity.getWindowManager().getDefaultDisplay().getSize(point);
+        return point;
     }
 }

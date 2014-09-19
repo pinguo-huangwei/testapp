@@ -24,7 +24,7 @@ import com.nostra13.universalimageloader.core.listener.ImageLoadingListener;
 /**
  * Created by huangwei on 14-9-16.
  */
-public class PicFragment extends Fragment implements View.OnClickListener, FragmentManager.OnBackStackChangedListener {
+public class PicEditFragment extends Fragment implements View.OnClickListener, FragmentManager.OnBackStackChangedListener {
     private Activity activity;
     private MImageView imageView;
     private CutView cutView;

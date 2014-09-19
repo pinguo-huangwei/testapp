@@ -4,7 +4,6 @@ import android.app.Activity;
 import android.app.FragmentManager;
 import android.app.FragmentTransaction;
 import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.graphics.ImageFormat;
 import android.hardware.Camera;
 import android.os.Bundle;
@@ -17,6 +16,7 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.ImageView;
 import com.example.testapp.Fragment.AlbumFragment;
+import com.example.testapp.Fragment.PicEditFragment;
 import com.example.testapp.Util.MediaScanner;
 import com.example.testapp.Util.PicUtil;
 
@@ -25,7 +25,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 
-public class MyActivity extends Activity implements SurfaceHolder.Callback, View.OnClickListener, Camera.PictureCallback {
+public class MyActivity extends BaseActivity implements SurfaceHolder.Callback, View.OnClickListener, Camera.PictureCallback {
 
 
     private SurfaceView surfaceView;
@@ -71,6 +71,7 @@ public class MyActivity extends Activity implements SurfaceHolder.Callback, View
 
     @Override
     public void surfaceCreated(final SurfaceHolder holder) {
+        Log.v("hwLog","surfaceCreated");
         camera = Camera.open(0);
         try {
             camera.setPreviewDisplay(holder);
@@ -95,7 +96,7 @@ public class MyActivity extends Activity implements SurfaceHolder.Callback, View
     @Override
     public void surfaceChanged(final SurfaceHolder holder, int format, int width, int height) {
         try {
-            camera.stopPreview();
+         //   camera.stopPreview();
             camera.autoFocus(new Camera.AutoFocusCallback() {
                 @Override
                 public void onAutoFocus(boolean success, Camera camera) {
@@ -119,6 +120,7 @@ public class MyActivity extends Activity implements SurfaceHolder.Callback, View
 
     @Override
     public void surfaceDestroyed(SurfaceHolder holder) {
+        Log.v("hwLog","surfaceDestroyed");
         if (camera != null)
             camera.release();
     }
@@ -213,10 +215,9 @@ public class MyActivity extends Activity implements SurfaceHolder.Callback, View
 
     @Override
     public void onPictureTaken(final byte[] data, Camera camera) {
+        takePhothBtn.setEnabled(true);
         camera.startPreview();
-        File dir = new File(Environment.getExternalStorageDirectory() + "/testpic");
-        if (!dir.exists())
-            dir.mkdir();
+        File dir = PicUtil.getPicDir();
         String name = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(System.currentTimeMillis()) + ".jpg";
         final File pic = new File(dir, name);
         FileOutputStream fileOutputStream = null;
@@ -241,7 +242,19 @@ public class MyActivity extends Activity implements SurfaceHolder.Callback, View
 
         thunbnailBitmap = PicUtil.getThumbnailFormByteArray(data,albumImg.getMeasuredWidth(),albumImg.getMeasuredHeight());
         albumImg.setImageBitmap(thunbnailBitmap);
-        takePhothBtn.setEnabled(true);
+
+        PicEditFragment picFragment = new PicEditFragment();
+        Bundle bundle = new Bundle();
+        bundle.putString("path", pic.getAbsolutePath());
+        picFragment.setArguments(bundle);
+
+
+        FragmentTransaction transaction = getFragmentManager().beginTransaction();
+//        transaction.setTransition(FragmentTransaction.TRANSIT_FRAGMENT_OPEN);
+        transaction.add(R.id.main_picture_preview_layout, picFragment);
+        transaction.addToBackStack(null);
+        transaction.commit();
+
 
 
     }

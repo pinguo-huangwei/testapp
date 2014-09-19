@@ -1,5 +1,6 @@
 package com.example.testapp;
 
+import android.app.Activity;
 import android.app.Application;
 import android.content.Context;
 import com.example.testapp.Util.DisplayUtil;
@@ -10,6 +11,7 @@ import com.nostra13.universalimageloader.core.assist.QueueProcessingType;
 import com.nostra13.universalimageloader.core.decode.BaseImageDecoder;
 
 import java.io.File;
+import java.lang.ref.WeakReference;
 
 /**
  * Created by huangwei on 14-9-18.
@@ -17,12 +19,25 @@ import java.io.File;
 public class MApplication extends Application {
     public static ImageLoader imageLoader;
 
+    public static WeakReference<Activity> curActivity;
+
     @Override
     public void onCreate() {
         super.onCreate();
         initImageLoader();
     }
 
+    public static void setCurActivity(Activity activity)
+    {
+        curActivity = new WeakReference<Activity>(activity);
+    }
+
+    public static Activity getCurActivity()
+    {
+        if(curActivity!=null)
+            return curActivity.get();
+        return null;
+    }
 
     private void initImageLoader()
     {

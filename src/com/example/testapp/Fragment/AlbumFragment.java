@@ -13,6 +13,7 @@ import android.widget.AdapterView;
 import android.widget.GridView;
 import com.example.testapp.Adapter.AlbumAdapter;
 import com.example.testapp.R;
+import com.example.testapp.Util.PicUtil;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -43,7 +44,7 @@ public class AlbumFragment extends Fragment implements AdapterView.OnItemClickLi
 
         gridView = (GridView) view.findViewById(R.id.album_grid);
 
-        File dir = new File(Environment.getExternalStorageDirectory() + "/testpic");
+        File dir = PicUtil.getPicDir();
 
         if (dir.exists()) {
             List<String> list = new ArrayList<String>();
@@ -56,7 +57,6 @@ public class AlbumFragment extends Fragment implements AdapterView.OnItemClickLi
         }
 
         gridView.setOnItemClickListener(this);
-
     }
 
     @Override
@@ -64,19 +64,28 @@ public class AlbumFragment extends Fragment implements AdapterView.OnItemClickLi
 
         String path = (String) albumAdapter.getItem(position);
         FragmentManager fragmentManager = activity.getFragmentManager();
-        Fragment fragment = fragmentManager.findFragmentByTag("PicFragment");
-        if (!(fragment instanceof  PicFragment)) {
-            PicFragment picFragment = new PicFragment();
-            Bundle bundle = new Bundle();
-            bundle.putString("path", path);
-            picFragment.setArguments(bundle);
+        Fragment fragment = fragmentManager.findFragmentByTag("PicEditFragment");
+        if (!(fragment instanceof PicEditFragment)) {
+            //            PicEditFragment picFragment = new PicEditFragment();
+//            Bundle bundle = new Bundle();
+//            bundle.putString("path", path);
+//            picFragment.setArguments(bundle);
+//
+//
+//            FragmentTransaction transaction = fragmentManager.beginTransaction();
+//            transaction.setTransition(FragmentTransaction.TRANSIT_FRAGMENT_OPEN);
+//            transaction.add(R.id.main_picture_preview_layout, picFragment, "PicEditFragment");
+//            transaction.addToBackStack(null);
+//            transaction.commit();
 
+            PicBrowserFragment picFragment = new PicBrowserFragment();
 
             FragmentTransaction transaction = fragmentManager.beginTransaction();
             transaction.setTransition(FragmentTransaction.TRANSIT_FRAGMENT_OPEN);
-            transaction.add(R.id.main_picture_preview_layout, picFragment, "PicFragment");
+            transaction.add(R.id.main_picture_preview_layout, picFragment);
             transaction.addToBackStack(null);
             transaction.commit();
+
         }
     }
 }
