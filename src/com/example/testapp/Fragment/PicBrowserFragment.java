@@ -69,7 +69,12 @@ public class PicBrowserFragment extends Fragment{
 //        }
         mViewPager = (MViewPager) view.findViewById(R.id.picbrowser_viewPager);
 
+        Bundle bundle = getArguments();
+        String path = bundle.getString("path");
+        if(path.startsWith("file://"))
+            path = path.substring("file://".length());
        File dir = PicUtil.getPicDir();
+        int index = 0;
         if(dir!=null)
         {
             picList = dir.list();
@@ -81,9 +86,12 @@ public class PicBrowserFragment extends Fragment{
                 {
 
                    picList[i] = stringBuilder.append(picList[i]).toString();
+                    if(picList[i].equals(path))
+                        index = i;
                    stringBuilder.delete(start,stringBuilder.length());
                 }
-                adapter = new PicPagerAdapter(activity,mViewPager,picList);
+                Log.v("hwLog","index:"+index);
+                adapter = new PicPagerAdapter(activity,mViewPager,picList,index);
                 mViewPager.setAdapter(adapter);
 
 

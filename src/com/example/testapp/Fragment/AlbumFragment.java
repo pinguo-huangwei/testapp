@@ -79,7 +79,9 @@ public class AlbumFragment extends Fragment implements AdapterView.OnItemClickLi
 //            transaction.commit();
 
             PicBrowserFragment picFragment = new PicBrowserFragment();
-
+            Bundle bundle = new Bundle();
+            bundle.putString("path", path);
+            picFragment.setArguments(bundle);
             FragmentTransaction transaction = fragmentManager.beginTransaction();
             transaction.setTransition(FragmentTransaction.TRANSIT_FRAGMENT_OPEN);
             transaction.add(R.id.main_picture_preview_layout, picFragment);
