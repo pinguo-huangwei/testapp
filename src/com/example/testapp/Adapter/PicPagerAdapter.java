@@ -6,6 +6,7 @@ import android.app.FragmentTransaction;
 import android.graphics.Matrix;
 import android.graphics.PointF;
 import android.graphics.Rect;
+import android.graphics.RectF;
 import android.os.Bundle;
 import android.support.v4.view.PagerAdapter;
 import android.support.v4.view.ViewPager;
@@ -13,6 +14,10 @@ import android.util.FloatMath;
 import android.util.Log;
 import android.view.*;
 import android.widget.ImageView;
+import android.widget.ImageView.ScaleType;
+
+import com.example.testapp.Adapter.MySimpleGestureListener;
+import com.example.testapp.Adapter.PicPagerAdapter;
 import com.example.testapp.Fragment.PicEditFragment;
 import com.example.testapp.R;
 import com.example.testapp.Util.DisplayUtil;
@@ -232,7 +237,7 @@ public class PicPagerAdapter extends PagerAdapter implements ViewPager.OnPageCha
             case MotionEvent.ACTION_MOVE:
                 if (mode == VIEWDRAG) {
 
-                    break;
+                   return false;
                 }
                 // 缩放后的图片拖动
                 else if (mode == PICDRAG) {
@@ -245,18 +250,25 @@ public class PicPagerAdapter extends PagerAdapter implements ViewPager.OnPageCha
                         float scale = newDist / oldDist;
                         matrix.postScale(scale, scale, mid.x, mid.y);
                         //边界检查及还原
-                        Rect mapRect = imageView.getDrawable().getBounds();
+                        float[] centerf = new float[9];
+                        centerMatrix.getValues(centerf);
+                        Rect bounds = imageView.getDrawable().getBounds();
+                        RectF mapRect = new RectF(bounds);
+                        centerMatrix.mapRect(mapRect);
                         float[] f = new float[9];
                         matrix.getValues(f);
                         float left = f[2];
                         float top = f[5];
-                        float width = mapRect.right * f[0];
-                        float height = mapRect.bottom * f[4];
+                        float width = bounds.right * f[0];
+                        float height = bounds.bottom * f[4];
                         float right = left + width;
                         float bottom = top + height;
-                        if (width < mapRect.right) {
-//                            imageView.setScaleType(ImageView.ScaleType.FIT_CENTER);
-//                            imageView.invalidate();
+                        if (width < mapRect.right -10) {
+                        	
+                            imageView.setImageMatrix(centerMatrix);
+                            matrix.set(centerMatrix);
+                            mode = VIEWDRAG;
+                            imageView.setScaleType(ScaleType.FIT_CENTER);
                         }
                     }
                 }
@@ -373,7 +385,7 @@ class MySimpleGestureListener extends GestureDetector.SimpleOnGestureListener {
 
     @Override
     public boolean onSingleTapUp(MotionEvent e) {
-        if (adapter.mode == adapter.PICDRAG)
+        if (adapter.mode == adapter.PICDRAG || adapter.mode == adapter.VIEWDRAG)
             return false;
         Fragment fragment = activity.getFragmentManager().findFragmentByTag("PicEditFragment");
         if (!(fragment instanceof PicEditFragment)) {
