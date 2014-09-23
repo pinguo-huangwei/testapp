@@ -3,26 +3,27 @@ package com.example.testapp.Adapter;
 import android.app.Activity;
 import android.app.Fragment;
 import android.app.FragmentTransaction;
-import android.graphics.Matrix;
-import android.graphics.PointF;
-import android.graphics.Rect;
-import android.graphics.RectF;
+import android.graphics.*;
 import android.os.Bundle;
 import android.support.v4.view.PagerAdapter;
 import android.support.v4.view.ViewPager;
 import android.util.FloatMath;
-import android.util.Log;
-import android.view.*;
+import android.view.GestureDetector;
+import android.view.MotionEvent;
+import android.view.View;
+import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.ImageView.ScaleType;
-
-import com.example.testapp.Adapter.MySimpleGestureListener;
-import com.example.testapp.Adapter.PicPagerAdapter;
 import com.example.testapp.Fragment.PicEditFragment;
+import com.example.testapp.MApplication;
 import com.example.testapp.R;
 import com.example.testapp.Util.DisplayUtil;
 import com.example.testapp.Util.PicUtil;
 import com.example.testapp.Widget.MViewPager;
+import com.nostra13.universalimageloader.core.DisplayImageOptions;
+import com.nostra13.universalimageloader.core.ImageLoader;
+import com.nostra13.universalimageloader.core.assist.ImageSize;
+import com.nostra13.universalimageloader.core.imageaware.ImageViewAware;
 
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -36,6 +37,8 @@ public class PicPagerAdapter extends PagerAdapter implements ViewPager.OnPageCha
     public String[] picArray;
     public MViewPager mViewPager;
 
+    private ImageLoader imageLoader;
+
     /**
      * 最大的缩小比例
      */
@@ -47,17 +50,12 @@ public class PicPagerAdapter extends PagerAdapter implements ViewPager.OnPageCha
 
     private int padding;
     //初始化时显示第几项
-    private int initIndex;
     public int curPageIndex;
 
     private GestureDetector detector;
-    private ScaleGestureDetector scaleDetector;
 
-    private float newDist;
     Matrix mMatrix = new Matrix();
-    private float[] beginValues;
 
-    public ImageView scaledImageView;
     private Matrix matrix = new Matrix();
     private Matrix savedMatrix = new Matrix();
     private Matrix centerMatrix = new Matrix();
@@ -68,16 +66,24 @@ public class PicPagerAdapter extends PagerAdapter implements ViewPager.OnPageCha
     static final int PICDRAG = 3;
     int mode = NONE;
 
+    private DisplayImageOptions bigPicDisplayOptions;
+
     // Remember some things for zooming
     PointF start = new PointF();
     PointF mid = new PointF();
     float oldDist = 1f;
 
+    //大图加载
+    private boolean load_BigPic = true;
+    private Bitmap bitmap_BigPic;
+    private ImageView imageView_BigPic;
+    private int index_BigPic = -1;
+
     public PicPagerAdapter(Activity activity, final MViewPager mViewPager, String[] picArray, final int initIndex) {
         this.activity = activity;
         this.picArray = picArray;
         this.mViewPager = mViewPager;
-        this.initIndex = initIndex;
+        imageLoader = MApplication.getImageLoader();
         detector = new GestureDetector(activity, new MySimpleGestureListener(activity, this));
         mViewPager.setOnPageChangeListener(this);
         mViewPager.setOnTouchListener(this);
@@ -88,6 +94,7 @@ public class PicPagerAdapter extends PagerAdapter implements ViewPager.OnPageCha
                 mViewPager.setCurrentItem(initIndex, false);
             }
         });
+
 
     }
 
@@ -108,17 +115,79 @@ public class PicPagerAdapter extends PagerAdapter implements ViewPager.OnPageCha
 
     @Override
     public Object instantiateItem(ViewGroup container, int position) {
-        ImageView imageView = new ImageView(activity);
-        imageView.setImageBitmap(PicUtil.getDefaultBitmapFormPath(picArray[position]));
+        final ImageView imageView = new ImageView(activity);
+//        imageView.setImageBitmap(PicUtil.getDefaultBitmapFormPath(picArray[position]));
         imageView.setScaleType(ImageView.ScaleType.FIT_CENTER);
         imageView.setPadding(padding, padding, padding, padding);
-//        imageView.setOnTouchListener(this);
         imageView.setTag(picArray[position]);
+        imageLoader.displayImage("file://" + picArray[position], imageView);
         container.addView(imageView);
         setObjectForPosition(imageView, position);
         return imageView;
     }
 
+    /**
+     * 尝试加载原图，OutOfMemory则加载小图
+     *
+     * @param imageView
+     * @param path
+     */
+    private boolean tryLoadBigPic(final ImageView imageView, String path) {
+
+//        if(!load_BigPic)
+//            return;
+
+        if (curPageIndex == index_BigPic)
+            return false;
+        if (imageView == null)
+            return false;
+        final String uri = "file://" + path;
+        BitmapFactory.Options options = new BitmapFactory.Options();
+        options.inJustDecodeBounds = true;
+        BitmapFactory.decodeFile(picArray[curPageIndex], options);
+        if (options != null && options.outWidth != 0 && options.outHeight != 0) {
+            if (bigPicDisplayOptions == null)
+                bigPicDisplayOptions = new DisplayImageOptions.Builder().cacheInMemory(false).build();
+            BigPicImageAware bigPicImageAware = new BigPicImageAware(imageView, options.outWidth, options.outHeight);
+
+            Bitmap bitmap = imageLoader.loadImageSync(uri, new ImageSize(options.outWidth, options.outWidth, options.outHeight), bigPicDisplayOptions);
+            if (bitmap != null) {
+                imageView_BigPic = imageView;
+                bitmap_BigPic = bitmap;
+
+                index_BigPic = curPageIndex;
+                imageView.setImageBitmap(bitmap);
+            }
+        }
+        return true;
+
+//            imageLoader.displayImage(uri, bigPicImageAware, bigPicDisplayOptions, new ImageLoadingListener() {
+//                @Override
+//                public void onLoadingStarted(String imageUri, View view) {
+//
+//                }
+//
+//                @Override
+//                public void onLoadingFailed(String imageUri, View view, FailReason failReason) {
+//                    if (failReason.getType() == FailReason.FailType.OUT_OF_MEMORY) {
+//                        load_BigPic = false;
+//                    }
+//                }
+//
+//                @Override
+//                public void onLoadingComplete(String imageUri, View view, Bitmap loadedImage) {
+//                    imageView_BigPic = (ImageView) view;
+//                    bitmap_BigPic = loadedImage;
+//                    index_BigPic = curPageIndex;
+//                }
+//
+//                @Override
+//                public void onLoadingCancelled(String imageUri, View view) {
+//
+//                }
+//            });
+
+    }
 
     @Override
     public void onPageScrolled(int position, float positionOffset, int positionOffsetPixels) {
@@ -184,6 +253,17 @@ public class PicPagerAdapter extends PagerAdapter implements ViewPager.OnPageCha
     public void onPageSelected(int position) {
         curPageIndex = position;
         resetImageViews();
+        if (index_BigPic != -1 && curPageIndex != index_BigPic) {
+            //释放资源
+            if (imageView_BigPic != null) {
+                imageView_BigPic.setImageBitmap(null);
+                if (index_BigPic >= 0 && index_BigPic < picArray.length)
+                    imageLoader.displayImage("file://" + picArray[index_BigPic], imageView_BigPic);
+            }
+            bitmap_BigPic = null;
+            index_BigPic = -1;
+
+        }
     }
 
     @Override
@@ -222,10 +302,15 @@ public class PicPagerAdapter extends PagerAdapter implements ViewPager.OnPageCha
             case MotionEvent.ACTION_POINTER_DOWN:  //多点触控
                 oldDist = this.spacing(event);
                 if (oldDist > 10f) {
-                    if (imageView.getScaleType() == ImageView.ScaleType.FIT_CENTER)
+                    if (imageView.getScaleType() == ImageView.ScaleType.FIT_CENTER) {
+                        //尝试加载大图
+                        tryLoadBigPic(imageView, picArray[curPageIndex]);
                         centerMatrix.set(imageView.getImageMatrix());
-                    imageView.setScaleType(ImageView.ScaleType.MATRIX);
+                        matrix.set(imageView.getImageMatrix());
 
+                    }
+
+                    imageView.setScaleType(ImageView.ScaleType.MATRIX);
                     savedMatrix.set(matrix);
                     midPoint(mid, event);
                     mode = ZOOM;
@@ -235,23 +320,30 @@ public class PicPagerAdapter extends PagerAdapter implements ViewPager.OnPageCha
                 mode = NONE;
                 break;
             case MotionEvent.ACTION_MOVE:
-                if (mode == VIEWDRAG) {
+                if (mode == VIEWDRAG)
+                {
 
-                   return false;
+                    return false;
                 }
                 // 缩放后的图片拖动
-                else if (mode == PICDRAG) {
-                    if (scrollPic(imageView, event.getX() - start.x, event.getY() - start.y))
+                else if (mode == PICDRAG)
+                {
+                    if (scrollPic(imageView, event.getX() - start.x, event.getY() - start.y)) {
                         return true;
-                } else if (mode == ZOOM) {  // 图片缩放
+                    }
+                    else
+                    {
+                        mode = VIEWDRAG;
+                        return true;
+                    }
+                }
+               else if (mode == ZOOM) {  // 图片缩放
                     float newDist = spacing(event);
                     if (newDist > 10) {
                         matrix.set(savedMatrix);
                         float scale = newDist / oldDist;
                         matrix.postScale(scale, scale, mid.x, mid.y);
                         //边界检查及还原
-                        float[] centerf = new float[9];
-                        centerMatrix.getValues(centerf);
                         Rect bounds = imageView.getDrawable().getBounds();
                         RectF mapRect = new RectF(bounds);
                         centerMatrix.mapRect(mapRect);
@@ -263,13 +355,25 @@ public class PicPagerAdapter extends PagerAdapter implements ViewPager.OnPageCha
                         float height = bounds.bottom * f[4];
                         float right = left + width;
                         float bottom = top + height;
-                        if (width < mapRect.right -10) {
-                        	
+                        if (width < mapRect.right - 10) {
+
                             imageView.setImageMatrix(centerMatrix);
                             matrix.set(centerMatrix);
                             mode = VIEWDRAG;
                             imageView.setScaleType(ScaleType.FIT_CENTER);
+                            return false;
                         }
+//                        else if(top > 0)
+//                        {
+//                            matrix.postTranslate(-top,0);
+//                            return false;
+//                        }
+//                        else if(bottom < PicUtil.getScreenSize().y)
+//                        {
+//                            matrix.postTranslate(0,PicUtil.getScreenSize().y-bottom);
+//                            return false;
+//                        }
+
                     }
                 }
                 break;
@@ -293,16 +397,19 @@ public class PicPagerAdapter extends PagerAdapter implements ViewPager.OnPageCha
         point.set(x / 2, y / 2);
     }
 
+    /**
+     * 图片放大后的拖动
+     *
+     * @param imageView
+     * @param distanceX
+     * @param distanceY
+     * @return true为还在拖动，false为已到边界，可切换为拖动View
+     */
     public boolean scrollPic(ImageView imageView, float distanceX, float distanceY) {
         Rect mapRect = imageView.getDrawable().getBounds();
         float[] savedf = new float[9];
         float[] f = new float[9];
         savedMatrix.getValues(savedf);
-
-
-//        if (left + distanceX > 0 || right + distanceX < PicUtil.getScreenSize().x
-//                || top + distanceY > 0 || bottom + distanceY < PicUtil.getScreenSize().y)
-//            return false;
 
         matrix.set(savedMatrix);
         matrix.postTranslate(distanceX, distanceY);
@@ -330,24 +437,18 @@ public class PicPagerAdapter extends PagerAdapter implements ViewPager.OnPageCha
             imageView.setImageMatrix(matrix);
 
             int screenWidth = PicUtil.getScreenSize().x;
-            Log.v("hwLog", "width:" + width + " screenWidth:" + screenWidth);
             if (width > screenWidth) {
                 if (left < 0 && right > screenWidth)
                     return true;
                 else {
-                    if (left >= 0)
+                    if (left > 0.0f)
                         matrix.postTranslate(-left, 0);
                     else if (right <= screenWidth)
                         matrix.postTranslate(screenWidth - right, 0);
                     return false;
                 }
             }
-//            Log.v("hwLog", "distanceX:" + distanceX);
-//            Log.v("hwLog", "l:" + matrix.toString());
-//            Log.v("hwLog", "l:" + left + " t:" + top + " r:" + right + " b:" + bottom);
         }
-
-
         return true;
     }
 
@@ -365,7 +466,6 @@ class MySimpleGestureListener extends GestureDetector.SimpleOnGestureListener {
 
     @Override
     public boolean onFling(MotionEvent e1, MotionEvent e2, float velocityX, float velocityY) {
-        Log.v("hwLog", "onFling");
         if (adapter.mode == adapter.PICDRAG)
             return false;
         if (velocityX > 1000) {
@@ -405,3 +505,31 @@ class MySimpleGestureListener extends GestureDetector.SimpleOnGestureListener {
     }
 
 }
+
+class BigPicImageAware extends ImageViewAware {
+    private int width;
+    private int height;
+
+    public BigPicImageAware(ImageView imageView, int width, int height) {
+        super(imageView);
+        this.width = width;
+        this.height = height;
+    }
+
+    @Override
+    public int getWidth() {
+        if (width <= 0)
+            return super.getWidth();
+        else
+            return width;
+    }
+
+    @Override
+    public int getHeight() {
+        if (height <= 0)
+            return super.getHeight();
+        else
+            return height;
+    }
+}
+

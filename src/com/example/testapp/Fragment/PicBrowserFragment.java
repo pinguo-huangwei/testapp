@@ -26,7 +26,7 @@ import java.io.File;
 /**
  * Created by huangwei on 14-9-16.
  */
-public class PicBrowserFragment extends Fragment{
+public class PicBrowserFragment extends BaseFragment{
     private Activity activity;
     private MViewPager mViewPager;
 
@@ -43,7 +43,7 @@ public class PicBrowserFragment extends Fragment{
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         activity = getActivity();
-        imageLoader = MApplication.imageLoader;
+        imageLoader = MApplication.getImageLoader();
     }
 
     @Override

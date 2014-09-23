@@ -16,6 +16,8 @@ import com.example.testapp.MApplication;
 import com.example.testapp.MyActivity;
 import com.example.testapp.R;
 import com.example.testapp.Util.DisplayUtil;
+import com.example.testapp.Util.PicUtil;
+import com.example.testapp.Widget.MImageView;
 import com.nostra13.universalimageloader.cache.disc.impl.UnlimitedDiscCache;
 import com.nostra13.universalimageloader.cache.disc.naming.HashCodeFileNameGenerator;
 import com.nostra13.universalimageloader.cache.memory.impl.LruMemoryCache;
@@ -30,6 +32,7 @@ import java.io.File;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import com.nostra13.universalimageloader.core.imageaware.ImageViewAware;
 
 /**
  * Created by huangwei on 14-9-18.
@@ -39,15 +42,13 @@ public class AlbumAdapter extends BaseAdapter{
     private Context context;
     private List<String> imgList;
     private ImageLoader imageLoader;
-    private Drawable unloadDrawable;
+    private int thumbSize;
+
     public AlbumAdapter(Context context,List<String> picList)
     {
         this.context = context;
         imgList = picList;
-        unloadDrawable = new ColorDrawable(Color.BLACK);
-
-        imageLoader = MApplication.imageLoader;
-
+        this.imageLoader = MApplication.getImageLoader();
     }
     @Override
     public int getCount() {
@@ -75,11 +76,7 @@ public class AlbumAdapter extends BaseAdapter{
             convertView.setTag(vh);
         }else
            vh = (ViewHolder) convertView.getTag();
-//        File file = new File(imgList.get(position));
-//        Bitmap bitmap = BitmapFactory.decodeFile(file.getAbsolutePath());
-//        vh.imageView.setImageBitmap(bitmap);
-         vh.imageView.setImageDrawable(unloadDrawable);
-      imageLoader.displayImage(imgList.get(position), vh.imageView);
+        imageLoader.displayImage(imgList.get(position),new ImageViewAware(vh.imageView));
         return convertView;
     }
 }

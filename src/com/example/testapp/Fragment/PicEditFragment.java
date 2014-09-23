@@ -1,7 +1,6 @@
 package com.example.testapp.Fragment;
 
 import android.app.Activity;
-import android.app.Fragment;
 import android.app.FragmentManager;
 import android.graphics.*;
 import android.os.Bundle;
@@ -12,26 +11,28 @@ import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
-import com.example.testapp.MApplication;
+import android.widget.TextView;
 import com.example.testapp.R;
 import com.example.testapp.Util.PicUtil;
 import com.example.testapp.Widget.CutView;
 import com.example.testapp.Widget.MImageView;
-import com.nostra13.universalimageloader.core.ImageLoader;
-import com.nostra13.universalimageloader.core.assist.FailReason;
-import com.nostra13.universalimageloader.core.listener.ImageLoadingListener;
+import org.w3c.dom.Text;
 
 /**
  * Created by huangwei on 14-9-16.
  */
-public class PicEditFragment extends Fragment implements View.OnClickListener, FragmentManager.OnBackStackChangedListener {
+public class PicEditFragment extends BaseFragment implements View.OnClickListener, FragmentManager.OnBackStackChangedListener {
     private Activity activity;
     private MImageView imageView;
     private CutView cutView;
 
-    private Button cutBtn;
-    private Button applyBtn;
-    private Button lighterBtn;
+    private ImageView cutImg;
+    private TextView applyTxt;
+    private ImageView effectImg;
+    private TextView backTxt;
+
+    private TextView cutTxt;
+    private TextView effectTxt;
 
     private float sX, sY;
     private Bitmap bitmap;
@@ -40,13 +41,11 @@ public class PicEditFragment extends Fragment implements View.OnClickListener, F
 
     private boolean changed = false;
 
-    private ImageLoader imageLoader;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         activity = getActivity();
-        imageLoader = MApplication.imageLoader;
     }
 
     @Override
@@ -58,18 +57,27 @@ public class PicEditFragment extends Fragment implements View.OnClickListener, F
     public void onViewCreated(View view, Bundle savedInstanceState) {
 
         imageView = (MImageView) view.findViewById(R.id.pic_imageView);
-        cutBtn = (Button) view.findViewById(R.id.pic_cut);
-        applyBtn = (Button) view.findViewById(R.id.pic_apply);
+        cutImg = (ImageView) view.findViewById(R.id.pic_cut);
+        applyTxt = (TextView) view.findViewById(R.id.pic_apply);
         cutView = (CutView) view.findViewById(R.id.pic_cutview);
-        lighterBtn = (Button) view.findViewById(R.id.pic_redder);
+        effectImg = (ImageView) view.findViewById(R.id.pic_effect);
+
+        cutTxt = (TextView) view.findViewById(R.id.pic_cut_txt);
+        effectTxt = (TextView) view.findViewById(R.id.pic_effect_txt);
+        backTxt = (TextView) view.findViewById(R.id.pic_back);
 
         cutView.setVisibility(View.GONE);
 
         imageView.setScaleType(ImageView.ScaleType.CENTER_INSIDE);
 
-        cutBtn.setOnClickListener(this);
-        applyBtn.setOnClickListener(this);
-        lighterBtn.setOnClickListener(this);
+        cutImg.setOnClickListener(this);
+        applyTxt.setOnClickListener(this);
+        effectImg.setOnClickListener(this);
+        backTxt.setOnClickListener(this);
+        cutTxt.setOnClickListener(this);
+        effectTxt.setOnClickListener(this);
+
+
         activity.getFragmentManager().addOnBackStackChangedListener(this);
 
         path = getArguments().getString("path");
@@ -130,6 +138,7 @@ public class PicEditFragment extends Fragment implements View.OnClickListener, F
     @Override
     public void onClick(View v) {
         switch (v.getId()) {
+            case R.id.pic_cut_txt:
             case R.id.pic_cut:
                 startCut();
                 break;
@@ -137,10 +146,14 @@ public class PicEditFragment extends Fragment implements View.OnClickListener, F
                 save();
                 changed = true;
                 break;
-            case R.id.pic_redder:
+            case R.id.pic_effect_txt:
+            case R.id.pic_effect:
                 bitmap = PicUtil.redder(bitmap);
                 setBitmap(bitmap);
                 changed = true;
+                break;
+            case R.id.pic_back:
+                activity.getFragmentManager().beginTransaction().remove(this).commit();
                 break;
             default:
                 break;

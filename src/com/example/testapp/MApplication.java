@@ -2,29 +2,26 @@ package com.example.testapp;
 
 import android.app.Activity;
 import android.app.Application;
-import android.content.Context;
-import com.example.testapp.Util.DisplayUtil;
 import com.nostra13.universalimageloader.core.DisplayImageOptions;
 import com.nostra13.universalimageloader.core.ImageLoader;
 import com.nostra13.universalimageloader.core.ImageLoaderConfiguration;
 import com.nostra13.universalimageloader.core.assist.QueueProcessingType;
 import com.nostra13.universalimageloader.core.decode.BaseImageDecoder;
 
-import java.io.File;
 import java.lang.ref.WeakReference;
 
 /**
  * Created by huangwei on 14-9-18.
  */
 public class MApplication extends Application {
-    public static ImageLoader imageLoader;
 
     public static WeakReference<Activity> curActivity;
+
+    private static ImageLoader imageLoader;
 
     @Override
     public void onCreate() {
         super.onCreate();
-        initImageLoader();
     }
 
     public static void setCurActivity(Activity activity)
@@ -39,21 +36,31 @@ public class MApplication extends Application {
         return null;
     }
 
-    private void initImageLoader()
+    public static ImageLoader getImageLoader()
     {
-        File cacheDir = getExternalCacheDir();
-        int size = DisplayUtil.dip2px(this, 80);
-        ImageLoaderConfiguration config = new ImageLoaderConfiguration.Builder(this)
+        if(imageLoader==null)
+            imageLoader = initImageLoader();
+        return imageLoader;
+    }
+    private static ImageLoader initImageLoader() {
+        DisplayImageOptions displayImageOptions = new DisplayImageOptions.Builder()
+                .showImageOnLoading(R.drawable.gg_album_photo_default)
+                .cacheInMemory(true)
+                .build();
+        ImageLoader imageLoader = ImageLoader.getInstance();
+
+        ImageLoaderConfiguration config = new ImageLoaderConfiguration.Builder(MApplication.getCurActivity())
 //                .memoryCacheExtraOptions(size, size) // default = device screen dimensions
                 .threadPoolSize(Runtime.getRuntime().availableProcessors()) // default
-                .threadPriority(Thread.NORM_PRIORITY - 2) // default
-                .tasksProcessingOrder(QueueProcessingType.FIFO) // default
-                .denyCacheImageMultipleSizesInMemory()
+                .tasksProcessingOrder(QueueProcessingType.LIFO) // default
                 .memoryCacheSizePercentage(30) // default
                 .imageDecoder(new BaseImageDecoder(false)) // default
-                .defaultDisplayImageOptions(DisplayImageOptions.createSimple()) // default
+                .defaultDisplayImageOptions(displayImageOptions)
+                .writeDebugLogs()
                 .build();
-        imageLoader = ImageLoader.getInstance();
+
         imageLoader.init(config);
+        return imageLoader;
     }
+
 }

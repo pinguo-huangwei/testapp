@@ -5,6 +5,27 @@
               android:orientation="vertical"
               android:layout_width="match_parent"
               android:layout_height="match_parent">
+    <RelativeLayout android:background="#4b4b4b"
+                    android:layout_width="match_parent" android:layout_height="wrap_content">
+        <TextView android:id="@+id/pic_back"
+                  android:text="返回"
+                  android:textColor="#ffffff"
+                  android:layout_alignParentLeft="true"
+                  android:layout_marginLeft="16dp"
+                  android:textSize="16dp"
+                  android:layout_width="wrap_content"
+                  android:gravity="center"
+                  android:layout_height="50dp"/>
+        <TextView android:id="@+id/pic_apply"
+                  android:text="保存"
+                  android:textColor="#ffffff"
+                  android:layout_alignParentRight="true"
+                  android:layout_marginRight="16dp"
+                  android:textSize="16dp"
+                  android:layout_width="wrap_content"
+                  android:gravity="center"
+                  android:layout_height="50dp"/>
+    </RelativeLayout>
     <FrameLayout
             android:layout_width="match_parent"
             android:layout_height="match_parent"
@@ -20,15 +41,44 @@
                 android:layout_height="match_parent"/>
     </FrameLayout>
 
-    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content">
-        <Button android:id="@+id/pic_cut"
-                android:text="裁剪"
-                android:layout_width="wrap_content" android:layout_height="wrap_content"/>
-        <Button android:id="@+id/pic_redder"
-                android:text="更红"
-                android:layout_width="wrap_content" android:layout_height="wrap_content"/>
-        <Button android:id="@+id/pic_apply"
-                android:text="应用"
-                android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+    <LinearLayout android:background="#4b4b4b"
+            android:layout_width="match_parent"
+            android:padding="8dp"
+                  android:layout_height="wrap_content">
+        <LinearLayout android:layout_width="wrap_content"
+                      android:layout_height="wrap_content"
+                      android:orientation="vertical">
+            <ImageView android:id="@+id/pic_cut"
+                       android:layout_width="40dp"
+                       android:layout_height="40dp"
+                       android:src="@drawable/pic_foot_cut_selector"/>
+            <TextView android:id="@+id/pic_cut_txt"
+                      android:layout_width="wrap_content"
+                      android:layout_height="wrap_content"
+                      android:text="裁剪"
+                      android:textSize="12sp"
+                      android:textColor="#ffffff"
+                      android:layout_marginTop="5dp"
+                      android:layout_gravity="center_horizontal"/>
+        </LinearLayout>
+        <LinearLayout
+                android:layout_marginLeft="16dp"
+                      android:layout_width="wrap_content"
+                      android:layout_height="wrap_content"
+                      android:orientation="vertical">
+            <ImageView android:id="@+id/pic_effect"
+                       android:layout_width="40dp"
+                       android:layout_height="40dp"
+                       android:src="@drawable/pic_foot_texiao_selector"/>
+            <TextView android:id="@+id/pic_effect_txt"
+                      android:layout_width="wrap_content"
+                      android:layout_height="wrap_content"
+                      android:text="特效"
+                      android:textSize="12sp"
+                      android:textColor="#ffffff"
+                      android:layout_marginTop="5dp"
+                      android:layout_gravity="center_horizontal"/>
+        </LinearLayout>
+
     </LinearLayout>
 </LinearLayout>

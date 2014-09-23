@@ -19,13 +19,14 @@ import com.example.testapp.Fragment.AlbumFragment;
 import com.example.testapp.Fragment.PicEditFragment;
 import com.example.testapp.Util.MediaScanner;
 import com.example.testapp.Util.PicUtil;
+import com.nostra13.universalimageloader.core.ImageLoader;
 
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 
-public class MyActivity extends BaseActivity implements SurfaceHolder.Callback, View.OnClickListener, Camera.PictureCallback {
+public class MyActivity extends BaseActivity implements SurfaceHolder.Callback, View.OnClickListener, Camera.PictureCallback, Camera.ShutterCallback {
 
 
     private SurfaceView surfaceView;
@@ -36,7 +37,8 @@ public class MyActivity extends BaseActivity implements SurfaceHolder.Callback, 
     private Camera camera;
     private int orientation;
 
-    private Bitmap thunbnailBitmap;
+    private ImageLoader imageLoader;
+
     private OrientationEventListener orientationEventListener;
 
     @Override
@@ -52,8 +54,11 @@ public class MyActivity extends BaseActivity implements SurfaceHolder.Callback, 
 
         albumImg.setScaleType(ImageView.ScaleType.FIT_XY);
 
+        imageLoader = MApplication.getImageLoader();
+
         surfaceHolder = surfaceView.getHolder();
         surfaceHolder.addCallback(this);
+
 
         takePhothBtn.setOnClickListener(this);
 
@@ -146,7 +151,7 @@ public class MyActivity extends BaseActivity implements SurfaceHolder.Callback, 
     }
 
     private void takePhoto() {
-        takePhothBtn.setEnabled(false);
+//        takePhothBtn.setEnabled(false);
         if (orientation == OrientationEventListener.ORIENTATION_UNKNOWN) return;
         android.hardware.Camera.CameraInfo info =
                 new android.hardware.Camera.CameraInfo();
@@ -171,7 +176,12 @@ public class MyActivity extends BaseActivity implements SurfaceHolder.Callback, 
         mParameters.setRotation(rotation);
         mParameters.setPictureFormat(ImageFormat.JPEG);
         camera.setParameters(mParameters);
-        camera.takePicture(null, null, this);
+        try {
+            camera.takePicture(this, null, this);
+        }catch (Exception e)
+        {
+            e.printStackTrace();
+        }
     }
 
 
@@ -202,8 +212,9 @@ public class MyActivity extends BaseActivity implements SurfaceHolder.Callback, 
 
                       int width = albumImg.getMeasuredWidth();
                       int height = albumImg.getMeasuredHeight();
-                      final Bitmap thumbnail = PicUtil.getThumbnailFormPath(path,width,height);
-                      albumImg.setImageBitmap(thumbnail);
+//                      final Bitmap thumbnail = PicUtil.getThumbnailFormPath(path,width,height);
+                      imageLoader.displayImage("file://"+path,albumImg);
+//                      albumImg.setImageBitmap(thumbnail);
                   }
               }
           }
@@ -240,7 +251,7 @@ public class MyActivity extends BaseActivity implements SurfaceHolder.Callback, 
         MediaScanner scanner = new MediaScanner(MyActivity.this);
         scanner.scanFile(pic.getAbsolutePath(), "image/*");
 
-        thunbnailBitmap = PicUtil.getThumbnailFormByteArray(data,albumImg.getMeasuredWidth(),albumImg.getMeasuredHeight());
+        Bitmap thunbnailBitmap = PicUtil.getThumbnailFormByteArray(data,albumImg.getMeasuredWidth(),albumImg.getMeasuredHeight());
         albumImg.setImageBitmap(thunbnailBitmap);
 
         PicEditFragment picFragment = new PicEditFragment();
@@ -257,5 +268,11 @@ public class MyActivity extends BaseActivity implements SurfaceHolder.Callback, 
 
 
 
+    }
+
+    @Override
+    public void onShutter() {
+        Log.v("hwLog","shutter");
+        takePhothBtn.setEnabled(true);
     }
 }
