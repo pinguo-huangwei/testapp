@@ -21,202 +21,224 @@ import org.w3c.dom.Text;
 /**
  * Created by huangwei on 14-9-16.
  */
-public class PicEditFragment extends BaseFragment implements View.OnClickListener, FragmentManager.OnBackStackChangedListener {
-    private Activity activity;
-    private MImageView imageView;
-    private CutView cutView;
+public class PicEditFragment extends BaseFragment implements View.OnClickListener
+{
+	private Activity activity;
+	private MImageView imageView;
+	private CutView cutView;
 
-    private ImageView cutImg;
-    private TextView applyTxt;
-    private ImageView effectImg;
-    private TextView backTxt;
+	private ImageView cutImg;
+	private TextView applyTxt;
+	private ImageView effectImg;
+	private TextView backTxt;
 
-    private TextView cutTxt;
-    private TextView effectTxt;
+	private TextView cutTxt;
+	private TextView effectTxt;
 
-    private float sX, sY;
-    private Bitmap bitmap;
+	private float sX, sY;
+	private Bitmap bitmap;
 
-    private String path;
+	private String path;
 
-    private boolean changed = false;
+	private boolean changed = false;
 
+	private Bitmap originBitmap;
 
-    @Override
-    public void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        activity = getActivity();
-    }
+	private boolean isCutting = false;
 
-    @Override
-    public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
-        return LayoutInflater.from(activity).inflate(R.layout.pic_fragment, null);
-    }
+	@Override
+	public void onCreate(Bundle savedInstanceState)
+	{
+		super.onCreate(savedInstanceState);
+		activity = getActivity();
+	}
 
-    @Override
-    public void onViewCreated(View view, Bundle savedInstanceState) {
+	@Override
+	public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState)
+	{
+		return LayoutInflater.from(activity).inflate(R.layout.pic_fragment, null);
+	}
 
-        imageView = (MImageView) view.findViewById(R.id.pic_imageView);
-        cutImg = (ImageView) view.findViewById(R.id.pic_cut);
-        applyTxt = (TextView) view.findViewById(R.id.pic_apply);
-        cutView = (CutView) view.findViewById(R.id.pic_cutview);
-        effectImg = (ImageView) view.findViewById(R.id.pic_effect);
+	@Override
+	public void onViewCreated(View view, Bundle savedInstanceState)
+	{
 
-        cutTxt = (TextView) view.findViewById(R.id.pic_cut_txt);
-        effectTxt = (TextView) view.findViewById(R.id.pic_effect_txt);
-        backTxt = (TextView) view.findViewById(R.id.pic_back);
+		imageView = (MImageView) view.findViewById(R.id.pic_imageView);
+		cutImg = (ImageView) view.findViewById(R.id.pic_cut);
+		applyTxt = (TextView) view.findViewById(R.id.pic_apply);
+		cutView = (CutView) view.findViewById(R.id.pic_cutview);
+		effectImg = (ImageView) view.findViewById(R.id.pic_effect);
 
-        cutView.setVisibility(View.GONE);
+		cutTxt = (TextView) view.findViewById(R.id.pic_cut_txt);
+		effectTxt = (TextView) view.findViewById(R.id.pic_effect_txt);
+		backTxt = (TextView) view.findViewById(R.id.pic_back);
 
-        imageView.setScaleType(ImageView.ScaleType.CENTER_INSIDE);
+		cutView.setVisibility(View.GONE);
 
-        cutImg.setOnClickListener(this);
-        applyTxt.setOnClickListener(this);
-        effectImg.setOnClickListener(this);
-        backTxt.setOnClickListener(this);
-        cutTxt.setOnClickListener(this);
-        effectTxt.setOnClickListener(this);
+		imageView.setScaleType(ImageView.ScaleType.CENTER_INSIDE);
 
+		cutImg.setOnClickListener(this);
+		applyTxt.setOnClickListener(this);
+		effectImg.setOnClickListener(this);
+		backTxt.setOnClickListener(this);
+		cutTxt.setOnClickListener(this);
+		effectTxt.setOnClickListener(this);
 
-        activity.getFragmentManager().addOnBackStackChangedListener(this);
+		path = getArguments().getString("path");
+		if (path != null && path.startsWith("file://"))
+			path = path.substring("file://".length());
+		if (path != null)
+		{
+			Point size = new Point();
+			activity.getWindow().getWindowManager().getDefaultDisplay().getSize(size);
+			bitmap = PicUtil.getThumbnailFormPath(path, size.x, size.y);
+			originBitmap = bitmap;
+			setBitmap(bitmap);
 
-        path = getArguments().getString("path");
-        if (path != null && path.startsWith("file://"))
-            path = path.substring("file://".length());
-        if (path != null) {
-            Point size = new Point();
-            activity.getWindow().getWindowManager().getDefaultDisplay().getSize(size);
-            bitmap = PicUtil.getThumbnailFormPath(path,size.x,size.y);
-            setBitmap(bitmap);
+		}
 
-        }
+	}
 
+	public void setBitmap(final Bitmap bitmap)
+	{
+		if (bitmap != null)
+		{
+			imageView.setImageBitmap(bitmap);
+			imageView.post(new Runnable()
+			{
 
-    }
+				@Override
+				public void run()
+				{
+					// TODO Auto-generated method stub
 
-    public void setBitmap(final Bitmap bitmap) {
-        if (bitmap != null) {
-            imageView.setImageBitmap(bitmap);
-            imageView.post(new Runnable() {
+					//获得ImageView中Image的真实宽高，
+					int dw = imageView.getDrawable().getBounds().width();
+					int dh = imageView.getDrawable().getBounds().height();
 
-                @Override
-                public void run() {
-                    // TODO Auto-generated method stub
+					//获得ImageView中Image的变换矩阵
+					Matrix m = imageView.getImageMatrix();
+					float[] values = new float[10];
+					m.getValues(values);
 
-                    //获得ImageView中Image的真实宽高，
-                    int dw = imageView.getDrawable().getBounds().width();
-                    int dh = imageView.getDrawable().getBounds().height();
+					//Image在绘制过程中的变换矩阵，从中获得x和y方向的缩放系数
+					sX = values[0];
+					sY = values[4];
 
-                    //获得ImageView中Image的变换矩阵
-                    Matrix m = imageView.getImageMatrix();
-                    float[] values = new float[10];
-                    m.getValues(values);
+					//计算Image在屏幕上实际绘制的宽高
+					int cw = (int) (dw * sX);
+					int ch = (int) (dh * sY);
 
-                    //Image在绘制过程中的变换矩阵，从中获得x和y方向的缩放系数
-                    sX = values[0];
-                    sY = values[4];
+					int width = imageView.getWidth();
+					int height = imageView.getHeight();
 
-                    //计算Image在屏幕上实际绘制的宽高
-                    int cw = (int) (dw * sX);
-                    int ch = (int) (dh * sY);
+					RectF bounds = new RectF();
+					int margin = ((FrameLayout.LayoutParams) imageView.getLayoutParams()).leftMargin;
+					bounds.left = (width - cw) / 2f + margin;
+					bounds.right = width - bounds.left + margin;
+					bounds.top = (height - ch) / 2f + margin;
+					bounds.bottom = height - bounds.top + margin;
+					cutView.setBounds(bounds);
+				}
+			});
+		}
+	}
 
-                    int width = imageView.getWidth();
-                    int height = imageView.getHeight();
+	@Override
+	public void onClick(View v)
+	{
+		switch (v.getId())
+		{
+		case R.id.pic_cut_txt:
+		case R.id.pic_cut:
+			startCut();
+			break;
+		case R.id.pic_apply:
+			if (isCutting)
+				saveCut();
+			else
+			{
+				PicUtil.bitmapToFile(bitmap, path);
+				activity.getFragmentManager().popBackStack();
+			}
+			break;
+		case R.id.pic_effect_txt:
+		case R.id.pic_effect:
+			bitmap = PicUtil.redder(bitmap);
+			setBitmap(bitmap);
+			break;
+		case R.id.pic_back:
+			if (isCutting)
+			{
+				cutEnd();
+			}
+			else
+				activity.getFragmentManager().popBackStack();
+			break;
+		default:
+			break;
+		}
+	}
 
-                    RectF bounds = new RectF();
-                    int margin = ((FrameLayout.LayoutParams) imageView.getLayoutParams()).leftMargin;
-                    bounds.left = (width - cw) / 2f + margin;
-                    bounds.right = width - bounds.left + margin;
-                    bounds.top = (height - ch) / 2f + margin;
-                    bounds.bottom = height - bounds.top + margin;
-                    cutView.setBounds(bounds);
-                }
-            });
-        }
-    }
+	private void startCut()
+	{
+		cutView.setVisibility(View.VISIBLE);
+		applyTxt.setText("应用");
+		backTxt.setText("取消");
+		isCutting = true;
 
-    @Override
-    public void onClick(View v) {
-        switch (v.getId()) {
-            case R.id.pic_cut_txt:
-            case R.id.pic_cut:
-                startCut();
-                break;
-            case R.id.pic_apply:
-                save();
-                changed = true;
-                break;
-            case R.id.pic_effect_txt:
-            case R.id.pic_effect:
-                bitmap = PicUtil.redder(bitmap);
-                setBitmap(bitmap);
-                changed = true;
-                break;
-            case R.id.pic_back:
-                activity.getFragmentManager().beginTransaction().remove(this).commit();
-                break;
-            default:
-                break;
-        }
-    }
+		//获得ImageView中Image的真实宽高，
+		int dw = imageView.getDrawable().getBounds().width();
+		int dh = imageView.getDrawable().getBounds().height();
 
-    private void startCut() {
-        cutView.setVisibility(View.VISIBLE);
-        imageView.post(new Runnable() {
+		//获得ImageView中Image的变换矩阵
+		Matrix m = imageView.getImageMatrix();
+		float[] values = new float[10];
+		m.getValues(values);
 
-            @Override
-            public void run() {
-                // TODO Auto-generated method stub
+		//Image在绘制过程中的变换矩阵，从中获得x和y方向的缩放系数
+		sX = values[0];
+		sY = values[4];
 
-                //获得ImageView中Image的真实宽高，
-                int dw = imageView.getDrawable().getBounds().width();
-                int dh = imageView.getDrawable().getBounds().height();
+		//计算Image在屏幕上实际绘制的宽高
+		int cw = (int) (dw * sX);
+		int ch = (int) (dh * sY);
 
-                //获得ImageView中Image的变换矩阵
-                Matrix m = imageView.getImageMatrix();
-                float[] values = new float[10];
-                m.getValues(values);
+		int width = imageView.getWidth();
+		int height = imageView.getHeight();
 
-                //Image在绘制过程中的变换矩阵，从中获得x和y方向的缩放系数
-                sX = values[0];
-                sY = values[4];
+		RectF bounds = new RectF();
+		int margin = ((FrameLayout.LayoutParams) imageView.getLayoutParams()).leftMargin;
+		bounds.left = (width - cw) / 2f + margin;
+		bounds.right = width - bounds.left + margin;
+		bounds.top = (height - ch) / 2f + margin;
+		bounds.bottom = height - bounds.top + margin;
+		cutView.setBounds(bounds);
+	}
 
-                //计算Image在屏幕上实际绘制的宽高
-                int cw = (int) (dw * sX);
-                int ch = (int) (dh * sY);
+	private void saveCut()
+	{
 
-                int width = imageView.getWidth();
-                int height = imageView.getHeight();
+		RectF cutRect = cutView.getCutBounds();
+		cutRect.left /= sX;
+		cutRect.right /= sX;
+		cutRect.top /= sY;
+		cutRect.bottom /= sY;
+		Log.v("hwLog", "cutRect:" + cutRect.toShortString());
+		bitmap = Bitmap.createBitmap(bitmap, (int) cutRect.left, (int) cutRect.top, (int) (cutRect.right - cutRect.left), (int) (cutRect.bottom - cutRect.top));
+		setBitmap(bitmap);
+		
+		cutEnd();
+		
 
-                RectF bounds = new RectF();
-                int margin = ((FrameLayout.LayoutParams) imageView.getLayoutParams()).leftMargin;
-                bounds.left = (width - cw) / 2f + margin;
-                bounds.right = width - bounds.left + margin;
-                bounds.top = (height - ch) / 2f + margin;
-                bounds.bottom = height - bounds.top + margin;
-                cutView.setBounds(bounds);
-            }
-        });
-    }
+	}
 
-    private void save() {
+	private void cutEnd()
+	{
+		cutView.setVisibility(View.GONE);
+		applyTxt.setText("保存");
+		backTxt.setText("返回");
+		isCutting = false;
+	}
 
-        RectF cutRect = cutView.getCutBounds();
-        cutRect.left /= sX;
-        cutRect.right /= sX;
-        cutRect.top /= sY;
-        cutRect.bottom /= sY;
-        Log.v("hwLog", "cutRect:" + cutRect.toShortString());
-        bitmap = Bitmap.createBitmap(bitmap, (int) cutRect.left, (int) cutRect.top, (int) (cutRect.right - cutRect.left), (int) (cutRect.bottom - cutRect.top));
-        setBitmap(bitmap);
-        cutView.setVisibility(View.GONE);
-
-    }
-
-    @Override
-    public void onBackStackChanged() {
-        //保存
-        if (changed)
-            PicUtil.bitmapToFile(bitmap, path);
-    }
 }

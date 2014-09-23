@@ -56,7 +56,6 @@ public class MApplication extends Application {
                 .memoryCacheSizePercentage(30) // default
                 .imageDecoder(new BaseImageDecoder(false)) // default
                 .defaultDisplayImageOptions(displayImageOptions)
-                .writeDebugLogs()
                 .build();
 
         imageLoader.init(config);

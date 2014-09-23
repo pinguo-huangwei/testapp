@@ -152,6 +152,8 @@ public class MyActivity extends BaseActivity implements SurfaceHolder.Callback, 
 
     private void takePhoto() {
 //        takePhothBtn.setEnabled(false);
+    	 if(getFragmentManager().getBackStackEntryCount() > 0)
+    		 return;
         if (orientation == OrientationEventListener.ORIENTATION_UNKNOWN) return;
         android.hardware.Camera.CameraInfo info =
                 new android.hardware.Camera.CameraInfo();

@@ -22,6 +22,7 @@ public class BaseActivity extends Activity implements FragmentManager.OnBackStac
 
     @Override
     public void onBackStackChanged() {
+    	Log.v("hwLog", "onBackStackChanged");
         int count = getFragmentManager().getBackStackEntryCount();
         Log.v("hwLog","count:"+getFragmentManager().getBackStackEntryCount());
         if(fragmentRootView==null)
